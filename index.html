@@ -8,7 +8,29 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-// === הדביקו כאן את הגדרות Firebase שלכם (ראו README) ===
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyA5-ySBUkH4ZO9ZqMsc3MCgrbo_17u8HfA",
+    authDomain: "employee-vacations-3a755.firebaseapp.com",
+    projectId: "employee-vacations-3a755",
+    storageBucket: "employee-vacations-3a755.firebasestorage.app",
+    messagingSenderId: "1079736132859",
+    appId: "1:1079736132859:web:1f5abc635c59623a023c5e",
+    measurementId: "G-0LK39HCTZJ"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 window.FIREBASE_CONFIG={apiKey:"PASTE",authDomain:"PASTE",projectId:"PASTE",appId:"PASTE"};
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
