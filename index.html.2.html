@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ניהול חופשות עובדים</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// === הדביקו כאן את הגדרות Firebase שלכם (ראו README) ===
+window.FIREBASE_CONFIG={apiKey:"AIzaSyA5-ySBUkH4ZO9ZqMsc3MCgrbo_17u8HfA",authDomain:"employee-vacations-3a755.firebaseapp.com",projectId:"employee-vacations-3a755",storageBucket:"employee-vacations-3a755.firebasestorage.app",messagingSenderId:"1079736132859",appId:"1:1079736132859:web:1f5abc635c59623a023c5e"};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
+<style>
+:root{--bg:#eef1f8;--bg2:radial-gradient(900px 500px at 85% -10%,#c9d8ff 0,transparent 60%),radial-gradient(700px 500px at 0% 100%,#e3d0ff 0,transparent 60%);--gl:rgba(255,255,255,.72);--bd:rgba(40,60,110,.14);--tx:#141a2c;--mu:#5d6a86;--ac:#4a5cf0;--ac2:#00a6c8;--vac:#2a7de1;--late:#e08a00;--early:#9b4dde;--ok:#1f9d63;--no:#d6453a;--sh:0 8px 30px rgba(40,60,120,.12);color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#070b16;--bg2:radial-gradient(900px 500px at 85% -10%,rgba(80,100,255,.28) 0,transparent 60%),radial-gradient(700px 500px at 0% 100%,rgba(0,220,255,.16) 0,transparent 60%);--gl:rgba(22,30,54,.62);--bd:rgba(150,175,255,.18);--tx:#e9eeff;--mu:#93a0c4;--ac:#7b8cff;--ac2:#35e0ff;--vac:#4da3ff;--late:#ffb53d;--early:#c28bff;--ok:#3de09b;--no:#ff6b5e;--sh:0 8px 30px rgba(0,0,0,.45);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#070b16;--bg2:radial-gradient(900px 500px at 85% -10%,rgba(80,100,255,.28) 0,transparent 60%),radial-gradient(700px 500px at 0% 100%,rgba(0,220,255,.16) 0,transparent 60%);--gl:rgba(22,30,54,.62);--bd:rgba(150,175,255,.18);--tx:#e9eeff;--mu:#93a0c4;--ac:#7b8cff;--ac2:#35e0ff;--vac:#4da3ff;--late:#ffb53d;--early:#c28bff;--ok:#3de09b;--no:#ff6b5e;--sh:0 8px 30px rgba(0,0,0,.45);color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;height:auto}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);background-image:var(--bg2);background-attachment:fixed;color:var(--tx);font-family:Rubik,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
+.wrap{max-width:1120px;margin:0 auto;padding:16px}
+.glass{background:var(--gl);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--bd);border-radius:20px;box-shadow:var(--sh);padding:18px}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.brand{font-size:22px;font-weight:700;background:linear-gradient(90deg,var(--ac),var(--ac2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.who{display:flex;align-items:center;gap:10px;color:var(--mu);font-size:14px}
+.av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;display:grid;place-items:center;font-weight:700}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx);padding:9px 16px;transition:.15s}
+button:hover{border-color:var(--ac);transform:translateY(-1px)}
+.pri{background:linear-gradient(90deg,var(--ac),var(--ac2));border:none;color:#fff;font-weight:500}
+.seg{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--bd);border-radius:16px;background:var(--gl);margin-bottom:14px;flex-wrap:wrap}
+.seg button{border:none;padding:8px 18px}.seg button.on{background:linear-gradient(90deg,var(--ac),var(--ac2));color:#fff}
+.bdg{background:var(--no);color:#fff;border-radius:20px;font-size:11px;padding:1px 7px;margin-inline-start:5px}
+.nav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ttl{flex:1;text-align:center}.ttl b{font-size:22px;display:block}.ttl span{color:var(--mu);font-size:13px}
+.leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin-bottom:10px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:5px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wd{text-align:center;color:var(--mu);font-size:12px;padding:4px 0}
+.day{min-height:104px;border:1px solid var(--bd);border-radius:14px;padding:6px;cursor:pointer;background:var(--gl);overflow:hidden;transition:.15s}
+.day:hover{border-color:var(--ac2);box-shadow:0 0 0 1px var(--ac2)}
+.day.blank{border:none;background:none;cursor:default;box-shadow:none}
+.day.today{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
+.day.lk{background:repeating-linear-gradient(135deg,transparent 0 8px,var(--bd) 8px 9px)}
+.n{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;margin-bottom:3px}
+.h{font-weight:500;font-size:12px;color:var(--ac2)}
+.chip{font-size:11px;border-radius:8px;padding:1px 6px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.t-vac{background:var(--vac)}.t-late{background:var(--late)}.t-early{background:var(--early)}
+.chip.p{background:transparent;border:1px dashed currentColor}
+.chip.p.t-vac{color:var(--vac)}.chip.p.t-late{color:var(--late)}.chip.p.t-early{color:var(--early)}
+.chip.own{cursor:pointer;font-weight:700}.more{font-size:11px;color:var(--mu);margin-top:2px}
+.ov{position:fixed;inset:0;background:rgba(5,8,18,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px;z-index:50}
+.md{background:var(--bg);background-image:var(--bg2);border:1px solid var(--bd);border-radius:22px;max-width:460px;width:100%;max-height:92vh;overflow:auto;padding:22px;box-shadow:var(--sh)}
+.md h3{margin:0}.sub{color:var(--mu);font-size:13px;margin:2px 0 12px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.tile{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;font-size:13px}
+.tile b{font-size:24px;font-weight:400}.tile.on{color:#fff;border-color:transparent}
+.tile.on.vac{background:var(--vac)}.tile.on.late{background:var(--late)}.tile.on.early{background:var(--early)}
+.qt{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px}.qt button{padding:4px 10px;font-size:13px}
+.ex{font-size:13px;border-top:1px solid var(--bd);padding:8px 0;display:flex;justify-content:space-between;gap:8px;align-items:center}
+input{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--gl);color:var(--tx);margin:4px 0 10px}
+label{font-size:13px;color:var(--mu)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.err{color:var(--no);font-size:13px;min-height:18px}
+.lockb{background:color-mix(in srgb,var(--no) 14%,transparent);border:1px solid var(--no);border-radius:12px;padding:10px;margin:8px 0;font-size:14px}
+.login{max-width:380px;margin:9vh auto 0}.login h1{margin:0 0 4px;font-size:28px}
+.msg{border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.msg.un{border-inline-start:4px solid var(--ac2)}.msg small{color:var(--mu)}
+.ok{color:var(--ok)}.mu{color:var(--mu)}
+.ur{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd);padding:9px 0;gap:8px}
+.load{text-align:center;color:var(--mu);padding:70px 0}
+#toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translate(-50%,30px);background:var(--tx);color:var(--bg);padding:10px 18px;border-radius:14px;opacity:0;transition:.25s;z-index:80;font-size:14px;max-width:90vw;text-align:center;pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:640px){.day{min-height:74px;padding:3px;border-radius:10px}.chip{font-size:10px;padding:0 3px}.h{font-size:10px}.wrap{padding:10px}.glass{padding:12px}.grid{gap:3px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="load">טוען…</div></div>
+<div id="modal"></div><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const T={vac:'חופשה',late:'הגעה מאוחרת',early:'יציאה מוקדמת'};
+const IC={vac:'🌴',late:'⏰',early:'🏃'};
+const SH={vac:'חופש',late:'מגיע',early:'יוצא'};
+const WD=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const hf=new Intl.DateTimeFormat('he-u-ca-hebrew',{day:'numeric',month:'long',year:'numeric'});
+const hn=new Intl.DateTimeFormat('en-u-ca-hebrew',{day:'numeric'});
+const hp=d=>{const o={};hf.formatToParts(d).forEach(p=>o[p.type]=p.value);return o};
+function gem(n){
+  const O=['','א','ב','ג','ד','ה','ו','ז','ח','ט'],Tn=['','י','כ','ל'];
+  const s=n===15?'טו':n===16?'טז':Tn[Math.floor(n/10)]+O[n%10];
+  return s.length>1?s.slice(0,-1)+'״'+s.slice(-1):s+'׳';
+}
+const hday=d=>gem(parseInt(hn.format(d)));
+const at=(y,m,d)=>new Date(y,m,d,12);
+const key=(y,m,d)=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+const kd=k=>{const[a,b,c]=k.split('-').map(Number);return at(a,b-1,c)};
+const fmtD=k=>{const d=kd(k),p=hp(d);return 'יום '+WD[d.getDay()]+', '+d.getDate()+' ב'+d.toLocaleDateString('he-IL',{month:'long'})+' '+d.getFullYear()+' · '+hday(d)+' ב'+p.month+' '+p.year};
+const desc=r=>T[r.type]+(r.time?' ('+(r.type==='late'?'מגיע ב־':'יוצא ב־')+r.time+')':'');
+let dbErr="",FB=0,seeded=0,db=null,users=[],reqs=[],msgs=[],locks=[],me=null,view='',tab='cal',armed='';
+let ready=0,tm=new Date(),Y=tm.getFullYear(),M=tm.getMonth(),mdate='',mt='',medit='';
+const todayK=key(tm.getFullYear(),tm.getMonth(),tm.getDate());
+const ls={get(){try{return localStorage.getItem('vm_uid')}catch(e){return null}},set(v){try{v?localStorage.setItem('vm_uid',v):localStorage.removeItem('vm_uid')}catch(e){}}};
+const mapDocs=s=>s.docs.map(d=>Object.assign({id:d.id},d.data()));
+const isLocked=k=>locks.some(l=>l.id===k);
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),4200)}
+
+async function init(){
+  try{db=window.claude?await claude.use('db'):null}catch(e){db=null}
+  if(!db&&window.firebase&&FIREBASE_CONFIG.projectId&&FIREBASE_CONFIG.projectId!=='PASTE'){try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();FB=1}catch(e){db=null}}
+  if(!db){render();return}
+  const timer=setTimeout(()=>{if(!ready){ready=1;render()}},10000),fail=e=>{dbErr=(e&&(e.code||e.message))||"error";ready=1;render()};
+  db.collection('users').onSnapshot(s=>{if(FB&&!seeded&&!s.metadata.fromCache&&!s.docs.length){seeded=1;db.collection('users').doc('manager-aharon').set({name:'אהרן משה',pass:'0852',role:'manager'});db.collection('users').doc('emp-dudu').set({name:'דודו',pass:'4641',role:'employee'})}users=mapDocs(s);clearTimeout(timer);ready=1;
+    if(me===null&&ls.get())me=users.find(u=>u.id===ls.get())||null;
+    else if(me)me=users.find(u=>u.id===me.id)||null;
+    if(!me)ls.set(null);render()},fail);
+  db.collection('requests').onSnapshot(s=>{reqs=mapDocs(s);render()},fail);
+  db.collection('messages').onSnapshot(s=>{msgs=mapDocs(s);render()},fail);
+  db.collection('locks').onSnapshot(s=>{locks=mapDocs(s);render()},fail);
+}
+function render(){
+  const root=$('#app');
+  if(!db){view='x';root.innerHTML='<div class="glass login"><h1 class="brand">ניהול חופשות</h1><p class="mu">לא הוגדר חיבור למסד הנתונים. יש להדביק את הגדרות Firebase בראש הקובץ (ראו README).</p><p class="mu">'+(window.firebase?'':'ספריית Firebase לא נטענה – ייתכן שהקובץ נפתח בתוך Claude או שהאינטרנט חסום. פתחו אותו בדפדפן רגיל או דרך האתר ב-GitHub.')+'</p></div>';return}
+  if(dbErr){view='x';root.innerHTML='<div class="glass login"><h1 class="brand">שגיאת מסד נתונים</h1><p class="mu">קוד השגיאה: <b dir="ltr">'+esc(dbErr)+'</b></p><p class="mu">permission-denied = יש לעדכן ב-Firestore את ה-Rules ל-allow read, write: if true. not-found או failed-precondition או unavailable = יש ליצור Firestore Database בפרויקט.</p></div>';return}
+  if(!ready){root.innerHTML='<div class="load">טוען…</div>';return}
+  if(!me){if(view!=='login')loginView();return}
+  if(tab==='staff'&&document.activeElement&&document.activeElement.closest('#sf'))return;
+  view='app';appView();
+}
+function loginView(){
+  view='login';
+  $('#app').innerHTML='<div class="glass login"><h1 class="brand">ניהול חופשות</h1><div class="sub">התחברו עם שם משתמש וסיסמה</div><label>שם משתמש</label><input id="lu" autocomplete="username"><label>סיסמה</label><input id="lp" type="password" autocomplete="current-password"><div class="err" id="le"></div><button class="pri" style="width:100%" onclick="login()">כניסה</button></div>';
+  $('#lp').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+  $('#lu').addEventListener('keydown',e=>{if(e.key==='Enter')$('#lp').focus()});
+}
+function login(){
+  const n=$('#lu').value.trim(),p=$('#lp').value.trim();
+  const u=users.find(x=>x.name===n&&String(x.pass)===p);
+  if(!u){$('#le').textContent=users.length?'שם משתמש או סיסמה שגויים':'אין עדיין משתמשים במערכת';return}
+  me=u;ls.set(u.id);tab='cal';render();
+}
+function logout(){me=null;ls.set(null);view='';armed='';render()}
+function setTab(t){
+  tab=t;armed='';
+  if(t==='inbox')msgs.filter(m=>m.to===me.id&&!m.read).forEach(m=>db.collection('messages').doc(m.id).update({read:true}).catch(()=>{}));
+  render();
+}
+function nav(d){M+=d;if(M<0){M=11;Y--}if(M>11){M=0;Y++}render()}
+function goToday(){Y=tm.getFullYear();M=tm.getMonth();render()}
+
+function appView(){
+  const mg=me.role==='manager',un=msgs.filter(m=>m.to===me.id&&!m.read).length;
+  let h='<div class="top"><div class="brand">ניהול חופשות עובדים</div><div class="who"><span class="av">'+esc(me.name.charAt(0))+'</span><span><b>'+esc(me.name)+'</b>'+(mg?' · מנהל':'')+'</span><button onclick="logout()">יציאה</button></div></div>';
+  h+='<div class="seg"><button class="'+(tab==='cal'?'on':'')+'" onclick="setTab(\'cal\')">לוח שנה</button><button class="'+(tab==='inbox'?'on':'')+'" onclick="setTab(\'inbox\')">הודעות'+(un?'<span class="bdg">'+un+'</span>':'')+'</button>'+(mg?'<button class="'+(tab==='staff'?'on':'')+'" onclick="setTab(\'staff\')">ניהול</button>':'')+'</div>';
+  h+=tab==='cal'?calView():tab==='inbox'?inboxView():staffView();
+  $('#app').innerHTML=h;
+}
+function calView(){
+  const first=at(Y,M,1),last=at(Y,M+1,0),days=last.getDate(),a=hp(first),b=hp(last);
+  const hm=a.month===b.month?a.month:a.month+' – '+b.month,hy=a.year===b.year?a.year:a.year+' – '+b.year;
+  let h='<div class="glass"><div class="nav"><button onclick="nav(-1)">›</button><div class="ttl"><b>'+first.toLocaleDateString('he-IL',{month:'long',year:'numeric'})+'</b><span>'+hm+' '+hy+'</span></div><button onclick="nav(1)">‹</button><button onclick="goToday()">היום</button></div>';
+  h+='<div class="leg"><span><i style="background:var(--vac)"></i>חופשה</span><span><i style="background:var(--late)"></i>הגעה מאוחרת</span><span><i style="background:var(--early)"></i>יציאה מוקדמת</span><span>מקווקו = ממתין לאישור</span><span>🔒 יום נעול</span></div><div class="grid">';
+  WD.forEach(w=>h+='<div class="wd">'+w+'</div>');
+  for(let i=0;i<first.getDay();i++)h+='<div class="day blank"></div>';
+  for(let d=1;d<=days;d++){
+    const dt=at(Y,M,d),k=key(Y,M,d),p=hp(dt),hd=parseInt(hn.format(dt));
+    const list=reqs.filter(r=>r.date===k).sort((x,y)=>x.ts-y.ts),lk=isLocked(k);
+    h+='<div class="day'+(k===todayK?' today':'')+(lk?' lk':'')+'" onclick="openM(\''+k+'\')"><div class="n"><span>'+d+(lk?' 🔒':'')+'</span><span class="h">'+hday(dt)+(hd===1||d===1?' '+esc(p.month):'')+'</span></div>';
+    list.slice(0,3).forEach(r=>{const own=r.uid===me.id;h+='<div class="chip t-'+r.type+(r.status==='pending'?' p':'')+(own?' own':'')+'" title="'+esc(r.name+' · '+desc(r)+(r.status==='pending'?' · ממתין לאישור':''))+'"'+(own?' onclick="event.stopPropagation();openM(\''+k+'\',\''+r.id+'\')"':'')+'>'+esc(r.name)+' · '+SH[r.type]+(r.time?' '+r.time:'')+'</div>'});
+    if(list.length>3)h+='<div class="more">+'+(list.length-3)+' נוספים</div>';
+    h+='</div>';
+  }
+  return h+'</div></div>';
+}
+
+function openM(k,eid){
+  mdate=k;medit=eid||'';const r=eid?reqs.find(x=>x.id===eid):null;
+  if(eid&&(!r||r.uid!==me.id))medit='';
+  const mg=me.role==='manager',lk=isLocked(k),rr=medit?r:null;
+  mt=rr?rr.type:'';
+  const list=reqs.filter(x=>x.date===k);
+  let h='<div class="ov" onclick="if(event.target===this)closeM()"><div class="md"><h3>'+(medit?'עריכת בקשה':'בקשה חדשה')+'</h3><div class="sub">'+fmtD(k)+'</div>';
+  if(lk)h+='<div class="lockb">🔒 היום נעול על ידי המנהל'+(mg?'':' – לא ניתן להגיש בקשות חדשות')+'</div>';
+  if(list.length){h+='<label>בקשות ביום זה</label>';list.forEach(x=>{h+='<div class="ex"><span><b>'+esc(x.name)+'</b> · '+esc(desc(x))+'</span><span class="'+(x.status==='approved'?'ok':'mu')+'">'+(x.status==='approved'?'אושר':'ממתין')+'</span>'+(x.uid===me.id?'<button style="color:var(--no)" onclick="quickDel(\''+x.id+'\')">מחיקה</button>':'')+(x.uid===me.id&&x.id!==medit?'<button onclick="openM(\''+k+'\',\''+x.id+'\')">'+(lk&&!mg?'פתח':'עריכה')+'</button>':'')+'</div>'})}
+  const canForm=!lk||mg;
+  if(canForm){
+    h+='<div class="tiles">';
+    ['vac','late','early'].forEach(t=>h+='<button class="tile '+t+(mt===t?' on':'')+'" onclick="pick(\''+t+'\')"><b>'+IC[t]+'</b>'+T[t]+'</button>');
+    h+='</div><div id="tw" style="display:'+(mt==='late'||mt==='early'?'block':'none')+'"><label id="tl">'+(mt==='late'?'שעת הגעה':'שעת יציאה')+'</label><input id="mtime" type="time" value="'+esc(rr?rr.time:'')+'"><div class="qt" id="qt"></div></div>';
+    h+='<label>סיבה / הערות (לא חובה)</label><input id="mnote" maxlength="120" value="'+esc(rr?rr.note:'')+'"><div class="err" id="me"></div><div class="row"><button class="pri" onclick="save()">'+(medit?'שמירת שינויים':'שליחת בקשה')+'</button>';
+  }else h+='<div class="err" id="me"></div><div class="row">';
+  if(medit)h+='<button onclick="delReq()" style="color:var(--no)">מחיקת הבקשה</button>';
+  if(mg)h+='<button onclick="toggleLock()">'+(lk?'🔓 שחרור נעילה':'🔒 נעילת היום')+'</button>';
+  h+='<button onclick="closeM()">סגירה</button></div></div></div>';
+  $('#modal').innerHTML=h;
+  if(mt==='late'||mt==='early')quick();
+}
+function closeM(){$('#modal').innerHTML=''}
+function quick(){
+  const L=mt==='late'?['08:30','09:00','09:30','10:00','11:00']:['12:00','13:00','14:00','15:00','16:00'];
+  $('#qt').innerHTML=L.map(t=>'<button onclick="$(\'#mtime\').value=\''+t+'\'">'+t+'</button>').join('');
+}
+function pick(t){
+  mt=t;document.querySelectorAll('.tile').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.tile.'+t).classList.add('on');
+  $('#tw').style.display=t==='vac'?'none':'block';
+  $('#tl').textContent=t==='late'?'שעת הגעה':'שעת יציאה';
+  const i=$('#mtime');if(!i.value)i.value=t==='late'?'09:30':'15:00';
+  if(t!=='vac')quick();
+}
+async function toggleLock(){
+  try{
+    if(isLocked(mdate)){await db.collection('locks').doc(mdate).delete();toast('הנעילה שוחררה')}
+    else{await db.collection('locks').doc(mdate).set({date:mdate,ts:Date.now()});toast('היום ננעל')}
+    closeM();
+  }catch(x){$('#me').textContent='אירעה שגיאה, נסו שוב'}
+}
+async function save(){
+  const e=$('#me');
+  if(!mt){e.textContent='יש לבחור קטגוריה';return}
+  const time=mt==='vac'?'':$('#mtime').value;
+  if(mt!=='vac'&&!time){e.textContent='יש לבחור שעה';return}
+  const mg=me.role==='manager';
+  if(isLocked(mdate)&&!mg){e.textContent='היום נעול';return}
+  let em='';
+  
+  const d={uid:me.id,name:me.name,date:mdate,type:mt,time:time,note:$('#mnote').value.trim(),status:mg?'approved':'pending',ts:Date.now()};
+  try{
+    let rid=medit;
+    if(medit)await db.collection('requests').doc(medit).set(d);
+    else rid=(await db.collection('requests').add(d)).id;
+    const boss=users.find(u=>u.role==='manager');
+    if(!mg&&boss){
+      const text=me.name+' '+(medit?'עדכן/ה בקשה':'הגיש/ה בקשה')+': '+desc(d)+' · '+fmtD(d.date);
+      await db.collection('messages').add({to:boss.id,rid:rid,text:text,ts:Date.now(),read:false});
+      
+      sendMail(boss,d,text,em);
+    }
+    closeM();
+  }catch(x){e.textContent='אירעה שגיאה בשמירה, נסו שוב'}
+}
+const MAIL_FROM='ab63187881@gmail.com',MAIL_TO='aa63187881@gmail.com';
+function mailParts(d){const day=kd(d.date).toLocaleDateString('he-IL');return{subject:'בקשה מעובד – '+d.name,body:'בקשה מעובד: '+d.name+'\nסוג הבקשה: '+desc(d)+'\nתאריך: '+day+(d.note?'\nסיבה / הערות: '+d.note:'')}}
+function mailFallback(d){const mp=mailParts(d),u='mailto:'+MAIL_TO+'?subject='+encodeURIComponent(mp.subject)+'&body='+encodeURIComponent(mp.body);
+  $('#modal').innerHTML='<div class="ov" onclick="if(event.target===this)closeM()"><div class="md"><h3>הבקשה נשמרה ✓</h3><div class="sub">המייל האוטומטי לא נשלח מהדפדפן. לחצו לפתיחת מייל מוכן למנהל ושלחו אותו.</div><div class="row"><a href="'+u+'" target="_blank" rel="noopener"><button class="pri">פתיחת מייל מוכן למנהל</button></a><button onclick="closeM()">סגירה</button></div></div></div>'}
+async function sendMail(boss, d, text, em){
+  try{
+    const day = kd(d.date).toLocaleDateString('he-IL');
+    if(!window.emailjs) throw new Error('no emailjs');
+
+    const typeDesc = T[d.type] + (d.time ? ' (' + (d.type === 'late' ? 'מגיע ב־' : 'יוצא ב־') + d.time + ')' : '');
+
+    await emailjs.send('service_lnwmdw9', 'template_mk2vhtr', {
+      from_name: me.name,
+      from_email: MAIL_FROM,
+      reply_to: MAIL_FROM,
+      to_email: MAIL_TO,
+      to_name: 'מנהל',
+      start_date: day,
+      request_type: typeDesc,
+      note: d.note || 'אין הערות',
+      subject: 'בקשה חדשה מאת ' + me.name
+    }, 'p8OrBzEgsDRGI7wL6');
+
+    toast('הבקשה נשמרה ונשלח מייל אוטומטי למנהל בהצלחה!');
+  }catch(x){
+    mailFallback(d);
+  }
+}
+async function delReq(){
+  try{await db.collection('requests').doc(medit).delete();closeM()}catch(x){$('#me').textContent='אירעה שגיאה במחיקה'}
+}
+function inboxView(){
+  const mine=msgs.filter(m=>m.to===me.id).sort((a,b)=>b.ts-a.ts);
+  let h='<div class="glass"><div class="row" style="justify-content:space-between;align-items:center;margin:0 0 10px"><b>תיבת הודעות</b>'+(mine.length?'<button onclick="delAllMsgs()">מחיקת כל ההודעות</button>':'')+'</div>';
+  if(!mine.length)h+='<div class="mu">אין הודעות</div>';
+  mine.forEach(m=>{
+    let tail='';
+    if(m.rid){
+      const r=reqs.find(x=>x.id===m.rid);
+      if(!r)tail='<div class="mu" style="margin-top:6px">הבקשה כבר אינה קיימת (נדחתה או בוטלה)</div>';
+      else if(r.status==='pending'&&me.role==='manager')tail='<div class="row"><button class="pri" onclick="decide(\''+m.rid+'\',true)">אישור</button><button onclick="decide(\''+m.rid+'\',false)" style="color:var(--no)">דחייה</button></div>';
+      else if(r.status==='approved')tail='<div class="ok" style="margin-top:6px">הבקשה אושרה</div>';
+    }
+    h+='<div class="msg'+(m.read?'':' un')+'"><div>'+esc(m.text)+'</div><small>'+new Date(m.ts).toLocaleString('he-IL',{dateStyle:'short',timeStyle:'short'})+'</small>'+tail+(m.rid&&me.role==='manager'&&reqs.some(x=>x.id===m.rid&&x.status==='pending')?'':'<div class="row"><button style="color:var(--no)" onclick="delMsg(\''+m.id+'\')">מחיקת הודעה</button></div>')+'</div>';
+  });
+  return h+'</div>';
+}
+async function decide(rid,ok){
+  const r=reqs.find(x=>x.id===rid);if(!r)return;
+  try{
+    if(ok)await db.collection('requests').doc(rid).update({status:'approved'});
+    else await db.collection('requests').doc(rid).delete();
+    await db.collection('messages').add({to:r.uid,text:'הבקשה שלך ('+desc(r)+' · '+fmtD(r.date)+') '+(ok?'אושרה ✓':'לא אושרה והוסרה מלוח השנה'),ts:Date.now(),read:false});
+  }catch(x){toast('אירעה שגיאה, נסו שוב')}
+}
+async function quickDel(id){try{await db.collection('requests').doc(id).delete();closeM();toast('הבקשה נמחקה')}catch(x){toast('אירעה שגיאה במחיקה')}}
+async function delMsg(id){try{await db.collection('messages').doc(id).delete()}catch(x){toast('אירעה שגיאה במחיקה')}}
+async function delAllMsgs(){try{for(const m of msgs.filter(m=>m.to===me.id&&!(m.rid&&me.role==='manager'&&reqs.some(x=>x.id===m.rid&&x.status==='pending'))))await db.collection('messages').doc(m.id).delete();toast('ההודעות נמחקו')}catch(x){toast('אירעה שגיאה במחיקה')}}
+function lockList(){return locks.slice().sort((a,b)=>a.id<b.id?-1:1).map(l=>'<div class="ur"><span>🔒 '+fmtD(l.id)+'</span><button onclick="unlock(\''+l.id+'\')">שחרור</button></div>').join('')||'<div class="mu">אין ימים נעולים</div>'}
+async function unlock(k){try{await db.collection('locks').doc(k).delete()}catch(x){toast('אירעה שגיאה')}}
+async function lockRange(on){
+  const a=$('#lf').value,b=$('#lt').value||a,e=$('#le2');
+  if(!a){e.textContent='יש לבחור תאריך';return}
+  if(b<a){e.textContent='תאריך הסיום מוקדם מההתחלה';return}
+  let d=kd(a);const end=kd(b),ks=[];
+  while(d<=end&&ks.length<92){ks.push(key(d.getFullYear(),d.getMonth(),d.getDate()));d=at(d.getFullYear(),d.getMonth(),d.getDate()+1)}
+  try{for(const k of ks){if(on)await db.collection('locks').doc(k).set({date:k,ts:Date.now()});else if(isLocked(k))await db.collection('locks').doc(k).delete()}e.textContent='';toast(on?'הימים ננעלו':'הנעילה שוחררה')}catch(x){e.textContent='אירעה שגיאה, נסו שוב'}
+}
+function staffView(){
+  let h='<div class="glass" id="sf"><div class="sub">התראות מייל נשלחות אל aa63187881@gmail.com</div><b>נעילת ימים</b><div class="sub">בחרו תאריך או טווח תאריכים. בימים נעולים לא ניתן להגיש בקשות חדשות (עד 3 חודשים בכל פעולה)</div><div class="row"><div style="flex:1;min-width:130px"><label>מתאריך</label><input id="lf" type="date"></div><div style="flex:1;min-width:130px"><label>עד תאריך</label><input id="lt" type="date"></div></div><div class="err" id="le2"></div><div class="row" style="margin-bottom:8px"><button class="pri" onclick="lockRange(true)">🔒 נעילה</button><button onclick="lockRange(false)">🔓 שחרור</button></div>'+lockList()+'<div style="height:22px"></div><b>הוספת עובד</b><div style="height:8px"></div><label>שם משתמש</label><input id="sn"><label>סיסמה</label><input id="sp"><div class="err" id="se"></div><button class="pri" onclick="addU()">הוספת עובד</button><div style="height:22px"></div><b>רשימת משתמשים</b>';
+  users.slice().sort((a,b)=>(a.role==='manager'?0:1)-(b.role==='manager'?0:1)||a.name.localeCompare(b.name,'he')).forEach(u=>{
+    h+='<div class="ur"><span><b>'+esc(u.name)+'</b> <span class="mu">· '+(u.role==='manager'?'מנהל':'עובד')+' · סיסמה: '+esc(u.pass)+'</span></span>'+(u.role==='manager'?'':'<button onclick="delU(\''+u.id+'\')" style="color:var(--no)">'+(armed===u.id?'לחצו שוב למחיקה':'מחיקה')+'</button>')+'</div>';
+  });
+  return h+'</div>';
+}
+async function saveMail(){
+  const v=$('#em').value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){$('#ee').textContent='כתובת מייל לא תקינה';return}
+  try{await db.collection('users').doc(me.id).update({email:v});$('#ee').textContent='';toast('המייל נשמר')}catch(x){$('#ee').textContent='אירעה שגיאה, נסו שוב'}
+}
+async function addU(){
+  const n=$('#sn').value.trim(),p=$('#sp').value.trim(),e=$('#se');
+  if(!n||!p){e.textContent='יש למלא שם משתמש וסיסמה';return}
+  if(users.some(u=>u.name===n)){e.textContent='שם המשתמש כבר קיים';return}
+  try{await db.collection('users').add({name:n,pass:p,role:'employee'});$('#sn').value='';$('#sp').value='';e.textContent='';toast('העובד נוסף')}catch(x){e.textContent='אירעה שגיאה, נסו שוב'}
+}
+async function delU(id){
+  if(armed!==id){armed=id;render();return}
+  armed='';
+  try{
+    for(const r of reqs.filter(x=>x.uid===id))await db.collection('requests').doc(r.id).delete();
+    await db.collection('users').doc(id).delete();
+  }catch(x){toast('אירעה שגיאה, נסו שוב')}
+}
+init();
+</script>
+</body>
+</html>
