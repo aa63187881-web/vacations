@@ -244,17 +244,31 @@ const MAIL_FROM='ab63187881@gmail.com',MAIL_TO='aa63187881@gmail.com';
 function mailParts(d){const day=kd(d.date).toLocaleDateString('he-IL');return{subject:'בקשה מעובד – '+d.name,body:'בקשה מעובד: '+d.name+'\nסוג הבקשה: '+desc(d)+'\nתאריך: '+day+(d.note?'\nסיבה / הערות: '+d.note:'')}}
 function mailFallback(d){const mp=mailParts(d),u='mailto:'+MAIL_TO+'?subject='+encodeURIComponent(mp.subject)+'&body='+encodeURIComponent(mp.body);
   $('#modal').innerHTML='<div class="ov" onclick="if(event.target===this)closeM()"><div class="md"><h3>הבקשה נשמרה ✓</h3><div class="sub">המייל האוטומטי לא נשלח מהדפדפן. לחצו לפתיחת מייל מוכן למנהל ושלחו אותו.</div><div class="row"><a href="'+u+'" target="_blank" rel="noopener"><button class="pri">פתיחת מייל מוכן למנהל</button></a><button onclick="closeM()">סגירה</button></div></div></div>'}
-async function sendMail(boss,d,text,em){
-  
+async function sendMail(boss, d, text, em){
   try{
-    const mp=mailParts(d),day=kd(d.date).toLocaleDateString('he-IL');if(!window.emailjs)throw new Error('no emailjs');
-    await emailjs.send('service_lnwmdw9','template_mk2vhtr',{from_name:me.name,from_email:MAIL_FROM,reply_to:MAIL_FROM,to_email:MAIL_TO,to_name:'מנהל',start_date:day,end_date:day,subject:mp.subject,message:mp.body},{publicKey:'p8OrBzEgsDRGI7wL6'});
-    toast('נשלח גם מייל למנהל');
-  }catch(x){mailFallback(d)}
+    const day = kd(d.date).toLocaleDateString('he-IL');
+    if(!window.emailjs) throw new Error('no emailjs');
+    
+    const typeDesc = T[d.type] + (d.time ? ' (' + (d.type === 'late' ? 'מגיע ב־' : 'יוצא ב־') + d.time + ')' : '');
+
+    await emailjs.send('service_lnwmdw9', 'template_mk2vhtr', {
+      from_name: me.name,
+      from_email: MAIL_FROM,
+      reply_to: MAIL_FROM,
+      to_email: MAIL_TO,
+      to_name: 'מנהל',
+      start_date: day,
+      request_type: typeDesc,
+      note: d.note || 'אין הערות',
+      subject: 'בקשה חדשה מאת ' + me.name
+    }, 'wCeBE6ElGGjo1CMIX');
+    
+    toast('הבקשה נשמרה ונשלח מייל אוטומטי למנהל בהצלחה!');
+  }catch(x){
+    mailFallback(d);
+  }
 }
-async function delReq(){
-  try{await db.collection('requests').doc(medit).delete();closeM()}catch(x){$('#me').textContent='אירעה שגיאה במחיקה'}
-}
+
 function inboxView(){
   const mine=msgs.filter(m=>m.to===me.id).sort((a,b)=>b.ts-a.ts);
   let h='<div class="glass"><div class="row" style="justify-content:space-between;align-items:center;margin:0 0 10px"><b>תיבת הודעות</b>'+(mine.length?'<button onclick="delAllMsgs()">מחיקת כל ההודעות</button>':'')+'</div>';
