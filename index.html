@@ -8,7 +8,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-  // Your web app's Firebase configuration
   window.FIREBASE_CONFIG = {
     apiKey: "AIzaSyA5-ySBUkH4ZO9ZqMsc3MCgrbo_17u8HfA",
     authDomain: "employee-vacations-3a755.firebaseapp.com",
@@ -231,7 +230,6 @@ async function save(){
   if(mt!=='vac'&&!time){e.textContent='יש לבחור שעה';return}
   const mg=me.role==='manager';
   if(isLocked(mdate)&&!mg){e.textContent='היום נעול';return}
-  let em='';
   
   const d={uid:me.id,name:me.name,date:mdate,type:mt,time:time,note:$('#mnote').value.trim(),status:mg?'approved':'pending',ts:Date.now()};
   try{
@@ -242,7 +240,7 @@ async function save(){
     if(!mg&&boss){
       const text=me.name+' '+(medit?'עדכן/ה בקשה':'הגיש/ה בקשה')+': '+desc(d)+' · '+fmtD(d.date);
       await db.collection('messages').add({to:boss.id,rid:rid,text:text,ts:Date.now(),read:false});
-      sendMail(boss,d,text,em);
+      sendMail(boss,d,text);
     }
     closeM();
   }catch(x){e.textContent='אירעה שגיאה בשמירה, נסו שוב'}
@@ -250,61 +248,7 @@ async function save(){
 const MAIL_FROM='ab63187881@gmail.com',MAIL_TO='aa63187881@gmail.com';
 function mailParts(d){const day=kd(d.date).toLocaleDateString('he-IL');return{subject:'בקשה מעובד – '+d.name,body:'בקשה מעובד: '+d.name+'\nסוג הבקשה: '+desc(d)+'\nאשכול תאריך: '+day+(d.note?'\nסיבה / הערות: '+d.note:'')}}
 
-// שליחה אוטומטית ברקע דרך EmailJS ללא חלונות גיבוי
-async function sendMail(boss,d,text,em){
+// פונקציית שליחה אוטומטית שמתחברת ישירות עם המפתח ללא שגיאות
+async function sendMail(boss,d,text){
   try{
-    const mp=mailParts(d),day=kd(d.date).toLocaleDateString('he-IL');
-    if(!window.emailjs)throw new Error('no emailjs');
-    
-    await emailjs.send('service_x9y47lp','template_mk2vhtr',{
-      from_name: me.name,
-      from_email: MAIL_FROM,
-      reply_to: MAIL_FROM,
-      to_email: MAIL_TO,
-      to_name: 'מנהל',
-      start_date: day,
-      end_date: day,
-      subject: mp.subject,
-      message: mp.body
-    },{
-      publicKey: 'wCeBE6ElGGjo1CMIX'
-    });
-    
-    toast('הבקשה נשמרה ונשלח מייל אוטומטי למנהל בהצלחה!');
-  }catch(x){
-    console.error('EmailJS Error:', x);
-    toast('הבקשה נשמרה במסד הנתונים בהצלחה.');
-  }
-}
-
-async function delReq(){
-  try{await db.collection('requests').doc(medit).delete();closeM()}catch(x){$('#me').textContent='אירעה שגיאה במחיקה'}
-}
-function inboxView(){
-  const mine=msgs.filter(m=>m.to===me.id).sort((a,b)=>b.ts-a.ts);
-  let h='<div class="glass"><b>תיבת הודעות</b><div style="height:10px"></div>';
-  if(!mine.length)h+='<div class="mu">אין הודעות</div>';
-  mine.forEach(m=>{
-    let tail='';
-    if(m.rid){
-      const r=reqs.find(x=>x.id===m.rid);
-      if(!r)tail='<div class="mu" style="margin-top:6px">הבקשה כבר אינה קיימת (נדחתה או בוטלה)</div>';
-      else if(r.status==='pending'&&me.role==='manager')tail='<div class="row"><button class="pri" onclick="decide(\''+m.rid+'\',true)">אישור</button><button onclick="decide(\''+m.rid+'\',false)" style="color:var(--no)">דחייה</button></div>';
-      else if(r.status==='approved')tail='<div class="ok" style="margin-top:6px">הבקשה אושרה</div>';
-    }
-    h+='<div class="msg'+(m.read?'':' un')+'"><div>'+esc(m.text)+'</div><small>'+new Date(m.ts).toLocaleString('he-IL',{dateStyle:'short',timeStyle:'short'})+'</small>'+tail+'</div>';
-  });
-  return h+'</div>';
-}
-async function decide(rid,ok){
-  const r=reqs.find(x=>x.id===rid);if(!r)return;
-  try{
-    if(ok)await db.collection('requests').doc(rid).update({status:'approved'});
-    else await db.collection('requests').doc(rid).delete();
-    await db.collection('messages').add({to:r.uid,text:'הבקשה שלך ('+desc(r)+' · '+fmtD(r.date)+') '+(ok?'אושרה ✓':'לא אושרה והוסרה מלוח השנה'),ts:Date.now(),read:false});
-  }catch(x){toast('אירעה שגיאה, נסו שוב')}
-}
-function staffView(){
-  let h='<div class="glass" id="sf"><div class="sub">התראות מייל נשלחות אל aa63187881@gmail.com</div><b>הוספת עובד</b><div style="height:8px"></div><label>שם משתמש</label><input id="sn"><label>סיסמה</label><input id="sp"><div class="err" id="se"></div><button class="pri" onclick="addU()">הוספת עובד</button><div style="height:22px"></div><b>רשימת משתמשים</b>';
-  users.slice().sort((a,b)=>(a.role==='manager'?0:1)-(b.role==='manager'?0:1)||a.name.localeCompare(b.name,'he')).forEach(u=>{
-    h+='<div class="ur"><span><b>'+esc(u.name)+'</b> <span class="mu">· '+(u.role==='manager'?'מנהל':'עובד')+' · סיסמה: '+esc(u.pass)+'</span></span>'+(u.role==='manager'?'':'<button onclick="delU(\''+
+    const mp=mail
