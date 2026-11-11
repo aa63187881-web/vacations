@@ -249,15 +249,34 @@ async function save(){
 }
 const MAIL_FROM='ab63187881@gmail.com',MAIL_TO='aa63187881@gmail.com';
 function mailParts(d){const day=kd(d.date).toLocaleDateString('he-IL');return{subject:'בקשה מעובד – '+d.name,body:'בקשה מעובד: '+d.name+'\nסוג הבקשה: '+desc(d)+'\nאשכול תאריך: '+day+(d.note?'\nסיבה / הערות: '+d.note:'')}}
-function mailFallback(d){const mp=mailParts(d),u='mailto:'+MAIL_TO+'?subject='+encodeURIComponent(mp.subject)+'&body='+encodeURIComponent(mp.body);
-  $('#modal').innerHTML='<div class="ov" onclick="if(event.target===this)closeM()"><div class="md"><h3>הבקשה נשמרה ✓</h3><div class="sub">המייל האוטומטי לא נשלח מהדפדפן. לחצו לפתיחת מייל מוכן למנהל ושלחו אותו.</div><div class="row"><a href="'+u+'" target="_blank" rel="noopener"><button class="pri">פתיחת מייל מוכן למנהל</button></a><button onclick="closeM()">סגירה</button></div></div></div>'}
+
+// שליחה אוטומטית ברקע דרך EmailJS ללא חלונות גיבוי
 async function sendMail(boss,d,text,em){
   try{
-    const mp=mailParts(d),day=kd(d.date).toLocaleDateString('he-IL');if(!window.emailjs)throw new Error('no emailjs');
-    await emailjs.send('service_x9y47lp','template_mk2vhtr',{from_name:me.name,from_email:MAIL_FROM,reply_to:MAIL_FROM,to_email:MAIL_TO,to_name:'מנהל',start_date:day,end_date:day,subject:mp.subject,message:mp.body},{publicKey:'wCeBE6ElGGjo1CMIX'});
-    toast('נשלח גם מייל למנהל');
-  }catch(x){mailFallback(d)}
+    const mp=mailParts(d),day=kd(d.date).toLocaleDateString('he-IL');
+    if(!window.emailjs)throw new Error('no emailjs');
+    
+    await emailjs.send('service_x9y47lp','template_mk2vhtr',{
+      from_name: me.name,
+      from_email: MAIL_FROM,
+      reply_to: MAIL_FROM,
+      to_email: MAIL_TO,
+      to_name: 'מנהל',
+      start_date: day,
+      end_date: day,
+      subject: mp.subject,
+      message: mp.body
+    },{
+      publicKey: 'wCeBE6ElGGjo1CMIX'
+    });
+    
+    toast('הבקשה נשמרה ונשלח מייל אוטומטי למנהל בהצלחה!');
+  }catch(x){
+    console.error('EmailJS Error:', x);
+    toast('הבקשה נשמרה במסד הנתונים בהצלחה.');
+  }
 }
+
 async function delReq(){
   try{await db.collection('requests').doc(medit).delete();closeM()}catch(x){$('#me').textContent='אירעה שגיאה במחיקה'}
 }
@@ -288,25 +307,4 @@ async function decide(rid,ok){
 function staffView(){
   let h='<div class="glass" id="sf"><div class="sub">התראות מייל נשלחות אל aa63187881@gmail.com</div><b>הוספת עובד</b><div style="height:8px"></div><label>שם משתמש</label><input id="sn"><label>סיסמה</label><input id="sp"><div class="err" id="se"></div><button class="pri" onclick="addU()">הוספת עובד</button><div style="height:22px"></div><b>רשימת משתמשים</b>';
   users.slice().sort((a,b)=>(a.role==='manager'?0:1)-(b.role==='manager'?0:1)||a.name.localeCompare(b.name,'he')).forEach(u=>{
-    h+='<div class="ur"><span><b>'+esc(u.name)+'</b> <span class="mu">· '+(u.role==='manager'?'מנהל':'עובד')+' · סיסמה: '+esc(u.pass)+'</span></span>'+(u.role==='manager'?'':'<button onclick="delU(\''+u.id+'\')" style="color:var(--no)">'+(armed===u.id?'לחצו שוב למחיקה':'מחיקה')+'</button>')+'</div>';
-  });
-  return h+'</div>';
-}
-async function addU(){
-  const n=$('#sn').value.trim(),p=$('#sp').value.trim(),e=$('#se');
-  if(!n||!p){e.textContent='יש למלא שם משתמש וסיסמה';return}
-  if(users.some(u=>u.name===n)){e.textContent='שם המשתמש כבר קיים';return}
-  try{await db.collection('users').add({name:n,pass:p,role:'employee'});$('#sn').value='';$('#sp').value='';e.textContent='';toast('העובד נוסף')}catch(x){e.textContent='אירעה שגיאה, נסו שוב'}
-}
-async function delU(id){
-  if(armed!==id){armed=id;render();return}
-  armed='';
-  try{
-    for(const r of reqs.filter(x=>x.uid===id))await db.collection('requests').doc(r.id).delete();
-    await db.collection('users').doc(id).delete();
-  }catch(x){toast('אירעה שגיאה, נסו שוב')}
-}
-init();
-</script>
-</body>
-</html>
+    h+='<div class="ur"><span><b>'+esc(u.name)+'</b> <span class="mu">· '+(u.role==='manager'?'מנהל':'עובד')+' · סיסמה: '+esc(u.pass)+'</span></span>'+(u.role==='manager'?'':'<button onclick="delU(\''+
