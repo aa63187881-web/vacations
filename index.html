@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -247,7 +248,31 @@ function mailFallback(d){const mp=mailParts(d),u='mailto:'+MAIL_TO+'?subject='+e
 async function sendMail(boss,d,text,em){
   try{
     const mp=mailParts(d),day=kd(d.date).toLocaleDateString('he-IL');if(!window.emailjs)throw new Error('no emailjs');
-    await emailjs.send('service_lnwmdw9','template_mk2vhtr',{from_name:me.name,from_email:MAIL_FROM,reply_to:MAIL_FROM,to_email:MAIL_TO,to_name:'מנהל',start_date:day,end_date:day,subject:mp.subject,message:mp.body},{publicKey:'p8OrBzEgsDRGI7wL6'});
+    
+    // בניית תיאור הסוג כולל השעה בצורה ברורה
+    const typeDesc = T[d.type] + (d.time ? ' (' + (d.type === 'late' ? 'מגיע ב־' : 'יוצא ב־') + d.time + ')' : '');
+    const noteText = d.note || 'אין הערות';
+    
+    // לקיחת כתובת האתר הנוכחית באופן דינמי
+    const currentAppUrl = window.location.origin + window.location.pathname;
+
+    await emailjs.send('service_lnwmdw9','template_mk2vhtr',{
+      from_name: me.name,
+      from_email: MAIL_FROM,
+      reply_to: MAIL_FROM,
+      to_email: MAIL_TO,
+      to_name: 'מנהל',
+      start_date: day,
+      end_date: day,
+      subject: mp.subject,
+      message: mp.body,
+      request_type: typeDesc,
+      type: typeDesc,
+      note: noteText,
+      reason: noteText,
+      app_url: currentAppUrl // שולח את הקישור הנוכחי הדינמי
+    },{publicKey:'p8OrBzEgsDRGI7wL6'});
+    
     toast('נשלח גם מייל למנהל');
   }catch(x){mailFallback(d)}
 }
