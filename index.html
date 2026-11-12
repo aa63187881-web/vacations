@@ -81,6 +81,7 @@ label{font-size:13px;color:var(--mu)}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const T={vac:'חופשה',late:'הגעה מאוחרת',early:'יציאה מוקדמת'};
+const RL={admin:'מנהל אתר',manager:'מנהל מאשר',employee:'עובד'};
 const IC={vac:'🌴',late:'⏰',early:'🏃'};
 const SH={vac:'חופש',late:'מגיע',early:'יוצא'};
 const WD=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
@@ -111,7 +112,7 @@ async function init(){
   if(!db&&window.firebase&&FIREBASE_CONFIG.projectId&&FIREBASE_CONFIG.projectId!=='PASTE'){try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();FB=1}catch(e){db=null}}
   if(!db){render();return}
   const timer=setTimeout(()=>{if(!ready){ready=1;render()}},10000),fail=e=>{dbErr=(e&&(e.code||e.message))||"error";ready=1;render()};
-  db.collection('users').onSnapshot(s=>{if(FB&&!seeded&&!s.metadata.fromCache&&!s.docs.length){seeded=1;db.collection('users').doc('manager-aharon').set({name:'אהרן משה',pass:'0852',role:'manager'});db.collection('users').doc('emp-dudu').set({name:'דודו',pass:'4641',role:'employee'})}users=mapDocs(s);clearTimeout(timer);ready=1;
+  db.collection('users').onSnapshot(s=>{if(FB&&!seeded&&!s.metadata.fromCache){seeded=1;if(!s.docs.length){db.collection('users').doc('manager-aharon').set({name:'אהרן משה',pass:'0852',role:'manager'});db.collection('users').doc('emp-dudu').set({name:'דודו',pass:'4641',role:'employee'})}if(!s.docs.some(d=>d.data().role==='admin'))db.collection('users').doc('admin-dudu').set({name:'דודו מנהל',pass:'3275',role:'admin'})}users=mapDocs(s);clearTimeout(timer);ready=1;
     if(me===null&&ls.get())me=users.find(u=>u.id===ls.get())||null;
     else if(me)me=users.find(u=>u.id===me.id)||null;
     if(!me)ls.set(null);render()},fail);
@@ -150,8 +151,8 @@ function nav(d){M+=d;if(M<0){M=11;Y--}if(M>11){M=0;Y++}render()}
 function goToday(){Y=tm.getFullYear();M=tm.getMonth();render()}
 
 function appView(){
-  const mg=me.role==='manager',un=msgs.filter(m=>m.to===me.id&&!m.read).length;
-  let h='<div class="top"><div class="brand">ניהול חופשות עובדים</div><div class="who"><span class="av">'+esc(me.name.charAt(0))+'</span><span><b>'+esc(me.name)+'</b>'+(mg?' · מנהל':'')+'</span><button onclick="logout()">יציאה</button></div></div>';
+  const mg=me.role==='manager'||me.role==='admin',un=msgs.filter(m=>m.to===me.id&&!m.read).length;
+  let h='<div class="top"><div class="brand">ניהול חופשות עובדים</div><div class="who"><span class="av">'+esc(me.name.charAt(0))+'</span><span><b>'+esc(me.name)+'</b>'+' · '+RL[me.role]+'</span><button onclick="logout()">יציאה</button></div></div>';
   h+='<div class="seg"><button class="'+(tab==='cal'?'on':'')+'" onclick="setTab(\'cal\')">לוח שנה</button><button class="'+(tab==='inbox'?'on':'')+'" onclick="setTab(\'inbox\')">הודעות'+(un?'<span class="bdg">'+un+'</span>':'')+'</button>'+(mg?'<button class="'+(tab==='staff'?'on':'')+'" onclick="setTab(\'staff\')">ניהול</button>':'')+'</div>';
   h+=tab==='cal'?calView():tab==='inbox'?inboxView():staffView();
   $('#app').innerHTML=h;
@@ -177,7 +178,7 @@ function calView(){
 function openM(k,eid){
   mdate=k;medit=eid||'';const r=eid?reqs.find(x=>x.id===eid):null;
   if(eid&&(!r||r.uid!==me.id))medit='';
-  const mg=me.role==='manager',lk=isLocked(k),rr=medit?r:null;
+  const mg=me.role==='manager'||me.role==='admin',lk=isLocked(k),rr=medit?r:null;
   mt=rr?rr.type:'';
   const list=reqs.filter(x=>x.date===k);
   let h='<div class="ov" onclick="if(event.target===this)closeM()"><div class="md"><h3>'+(medit?'עריכת בקשה':'בקשה חדשה')+'</h3><div class="sub">'+fmtD(k)+'</div>';
@@ -221,7 +222,7 @@ async function save(){
   if(!mt){e.textContent='יש לבחור קטגוריה';return}
   const time=mt==='vac'?'':$('#mtime').value;
   if(mt!=='vac'&&!time){e.textContent='יש לבחור שעה';return}
-  const mg=me.role==='manager';
+  const mg=me.role==='manager'||me.role==='admin';
   if(isLocked(mdate)&&!mg){e.textContent='היום נעול';return}
   let em='';
   
@@ -318,11 +319,38 @@ async function lockRange(on){
   try{for(const k of ks){if(on)await db.collection('locks').doc(k).set({date:k,ts:Date.now()});else if(isLocked(k))await db.collection('locks').doc(k).delete()}e.textContent='';toast(on?'הימים ננעלו':'הנעילה שוחררה')}catch(x){e.textContent='אירעה שגיאה, נסו שוב'}
 }
 function staffView(){
-  let h='<div class="glass" id="sf"><div class="sub">התראות מייל נשלחות אל aa63187881@gmail.com</div><b>נעילת ימים</b><div class="sub">בחרו תאריך או טווח תאריכים. בימים נעולים לא ניתן להגיש בקשות חדשות (עד 3 חודשים בכל פעולה)</div><div class="row"><div style="flex:1;min-width:130px"><label>מתאריך</label><input id="lf" type="date"></div><div style="flex:1;min-width:130px"><label>עד תאריך</label><input id="lt" type="date"></div></div><div class="err" id="le2"></div><div class="row" style="margin-bottom:8px"><button class="pri" onclick="lockRange(true)">🔒 נעילה</button><button onclick="lockRange(false)">🔓 שחרור</button></div>'+lockList()+'<div style="height:22px"></div><b>הוספת עובד</b><div style="height:8px"></div><label>שם משתמש</label><input id="sn"><label>סיסמה</label><input id="sp"><div class="err" id="se"></div><button class="pri" onclick="addU()">הוספת עובד</button><div style="height:22px"></div><b>רשימת משתמשים</b>';
-  users.slice().sort((a,b)=>(a.role==='manager'?0:1)-(b.role==='manager'?0:1)||a.name.localeCompare(b.name,'he')).forEach(u=>{
-    h+='<div class="ur"><span><b>'+esc(u.name)+'</b> <span class="mu">· '+(u.role==='manager'?'מנהל':'עובד')+' · סיסמה: '+esc(u.pass)+'</span></span>'+(u.role==='manager'?'':'<button onclick="delU(\''+u.id+'\')" style="color:var(--no)">'+(armed===u.id?'לחצו שוב למחיקה':'מחיקה')+'</button>')+'</div>';
-  });
+  const adm=me.role==='admin';
+  let h='<div class="glass" id="sf"><b>נעילת ימים</b><div class="sub">בחרו תאריך או טווח תאריכים. בימים נעולים לא ניתן להגיש בקשות חדשות (עד 3 חודשים בכל פעולה)</div><div class="row"><div style="flex:1;min-width:130px"><label>מתאריך</label><input id="lf" type="date"></div><div style="flex:1;min-width:130px"><label>עד תאריך</label><input id="lt" type="date"></div></div><div class="err" id="le2"></div><div class="row" style="margin-bottom:8px"><button class="pri" onclick="lockRange(true)">🔒 נעילה</button><button onclick="lockRange(false)">🔓 שחרור</button></div>'+lockList()+'<div style="height:22px"></div>';
+  if(adm){
+    h+='<b>הוספת עובד</b><div style="height:8px"></div><label>שם משתמש</label><input id="sn"><label>סיסמה</label><input id="sp"><div class="err" id="se"></div><button class="pri" onclick="addU()">הוספת עובד</button><div style="height:22px"></div><b>משתמשים</b><div class="sub">המנהל המאשר מקבל ומאשר את כל בקשות העובדים</div>';
+    const ord={admin:0,manager:1,employee:2};
+    users.slice().sort((a,b)=>ord[a.role]-ord[b.role]||a.name.localeCompare(b.name,'he')).forEach(u=>{
+      h+='<div class="ur"><span><b>'+esc(u.name)+'</b> <span class="mu">· '+RL[u.role]+' · סיסמה: '+esc(u.pass)+'</span></span><span class="row" style="margin:0"><button onclick="editU(\''+u.id+'\')">עריכה</button>'+(u.role==='employee'?'<button onclick="setMgr(\''+u.id+'\')">הגדר כמנהל מאשר</button><button onclick="delU(\''+u.id+'\')" style="color:var(--no)">'+(armed===u.id?'לחצו שוב למחיקה':'מחיקה')+'</button>':'')+'</span></div>';
+    });
+  }
   return h+'</div>';
+}
+function editU(id){
+  const u=users.find(x=>x.id===id);if(!u)return;
+  $('#modal').innerHTML='<div class="ov" onclick="if(event.target===this)closeM()"><div class="md"><h3>עריכת משתמש</h3><div class="sub">'+RL[u.role]+'</div><label>שם משתמש</label><input id="en" value="'+esc(u.name)+'"><label>סיסמה</label><input id="ep" value="'+esc(u.pass)+'"><div class="err" id="ee2"></div><div class="row"><button class="pri" onclick="saveU(\''+id+'\')">שמירה</button><button onclick="closeM()">ביטול</button></div></div></div>';
+}
+async function saveU(id){
+  const n=$('#en').value.trim(),p=$('#ep').value.trim(),e=$('#ee2');
+  if(!n||!p){e.textContent='יש למלא שם וסיסמה';return}
+  if(users.some(u=>u.name===n&&u.id!==id)){e.textContent='שם המשתמש כבר קיים';return}
+  try{
+    await db.collection('users').doc(id).update({name:n,pass:p});
+    for(const r of reqs.filter(x=>x.uid===id&&x.name!==n))await db.collection('requests').doc(r.id).update({name:n});
+    closeM();toast('הפרטים נשמרו');
+  }catch(x){e.textContent='אירעה שגיאה, נסו שוב'}
+}
+async function setMgr(id){
+  try{
+    for(const u of users.filter(x=>x.role==='manager'&&x.id!==id))await db.collection('users').doc(u.id).update({role:'employee'});
+    await db.collection('users').doc(id).update({role:'manager'});
+    for(const r of reqs.filter(x=>x.status==='pending'&&x.uid!==id))await db.collection('messages').add({to:id,rid:r.id,text:r.name+' הגיש/ה בקשה: '+desc(r)+' · '+fmtD(r.date),ts:Date.now(),read:false});
+    toast('המנהל המאשר עודכן');
+  }catch(x){toast('אירעה שגיאה, נסו שוב')}
 }
 async function saveMail(){
   const v=$('#em').value.trim();
