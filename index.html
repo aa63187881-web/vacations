@@ -439,6 +439,8 @@ async function sendMail(boss,d,text,em,isRem){
       to_email: MAIL_TO,
       to_name: 'מנהל',
       start_date: day,
+      day_name: 'יום '+WD[kd(d.date).getDay()],
+      full_date: fmtD(d.date),
       end_date: day,
       subject: (isRem?'תזכורת – ':'')+mp.subject,
       message: mp.body,
